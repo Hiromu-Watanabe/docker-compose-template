@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  web:
+    image: my_web_app:latest # 使用するイメージを指定
+    build: # コンテナのビルドに関する設定
+      context: ./web # Dockerfileがあるディレクトリのパス
+      dockerfile: Dockerfile # Dockerfileの名前
+    ports: # ホストとコンテナのポートマッピング
+      - "80:80"
+    volumes: # ホストとコンテナのストレージマッピング
+      - type: bind
+        source: ./web
+        target: /usr/src/app
+    environment: # コンテナ内の環境変数
+      - NODE_ENV=production
+    networks: # コンテナが参加するネットワーク
+      - backend
+    depends_on: # 他のサービスへの依存関係
+      - db
+    command: ["./start.sh"] # コンテナが実行するコマンド
+    entrypoint: ["/bin/sh"] # コンテナが実行するエントリーポイント
+    deploy: # スワームモードでのデプロイ設定
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  db:
+    image: postgres:latest # 使用するイメージ
+    volumes: # ホストとコンテナのストレージマッピング
+      - type: volume
+        source: dbdata
+        target: /var/lib/postgresql/data
+    environment: # コンテナ内の環境変数
+      POSTGRES_USER: my_user
+      POSTGRES_PASSWORD: my_password
+    networks: # コンテナが参加するネットワーク
+      - backend
+
+networks:
+  backend: # ネットワーク名
+
+volumes:
+  dbdata: # ボリューム名
